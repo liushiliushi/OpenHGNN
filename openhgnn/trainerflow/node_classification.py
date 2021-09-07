@@ -5,8 +5,7 @@ from ..utils.sampler import get_node_data_loader
 from ..models import build_model
 from ..layers.HeteroLinear import HeteroFeature
 from . import BaseFlow, register_flow
-from ..tasks import build_task
-from ..utils.logger import printInfo
+from ..utils.logger import printInfo, printMetric
 from ..utils import extract_embed, EarlyStopping, get_nodes_dict
 
 
@@ -25,24 +24,19 @@ class NodeClassification(BaseFlow):
     def __init__(self, args):
         super(NodeClassification, self).__init__(args)
 
-        self.args = args
-        self.model_name = args.model
-        self.device = args.device
-        self.task = build_task(args)
         if hasattr(args, 'metric'):
             self.metric = args.metric
         else:
             self.metric = 'f1'
 
-        self.hg = self.task.get_graph().to(self.device)
         self.num_classes = self.task.dataset.num_classes
+        self.args.category = self.task.dataset.category
 
         if not hasattr(self.task.dataset, 'out_dim') or args.out_dim != self.num_classes:
             print('Modify the out_dim with num_classes')
             args.out_dim = self.num_classes
         self.args.has_feature = self.task.dataset.has_feature
 
-        self.args.category = self.task.dataset.category
         self.category = self.args.category
         self.args.out_node_type = [self.category]
 
@@ -50,12 +44,8 @@ class NodeClassification(BaseFlow):
         self.model = self.model.to(self.device)
 
         self.evaluator = self.task.get_evaluator('f1')
-        self.loss_fn = self.task.get_loss_fn()
 
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-
-        self.patience = args.patience
-        self.max_epoch = args.max_epoch
 
         self.train_idx, self.valid_idx, self.test_idx = self.task.get_idx()
         self.labels = self.task.get_labels().to(self.device)
@@ -100,8 +90,7 @@ class NodeClassification(BaseFlow):
                                                                          test_idx=self.test_idx)
 
 
-        self.input_feature = HeteroFeature(self.hg.ndata['h'], get_nodes_dict(self.hg), self.args.hidden_dim).to(self.device)
-        self.optimizer.add_param_group({'params': self.input_feature.parameters()})
+        self.preprocess_feature()
         return
 
     def train(self):
@@ -130,11 +119,16 @@ class NodeClassification(BaseFlow):
                     print('Early Stop!\tEpoch:' + str(epoch))
                     break
 
-        print(f"Valid_score_{self.metric} = Min_loss = {stopper.best_loss: .4f}")
         stopper.load_model(self.model)
-
         ############ TEST SCORE #########
         if self.args.dataset[:4] == 'HGBn':
+
+            if self.args.mini_batch_flag and hasattr(self, 'val_loader'):
+                val_score, val_loss = self._mini_test_step(mode='validation')
+            else:
+                val_score, val_loss = self._full_test_step(mode='validation')
+
+            printMetric(self.metric, val_score, 'validation')
             self.model.eval()
             with torch.no_grad():
                 h_dict = self.input_feature()
@@ -148,10 +142,8 @@ class NodeClassification(BaseFlow):
             test_score, _ = self._full_test_step(mode='test')
             val_score, val_loss = self._full_test_step(mode='validation')
 
-        if isinstance(test_score, tuple):
-            print(f"Test_macro_{self.metric} = {test_score[0]:.4f}, Test_micro_{self.metric}: {test_score[1]:.4f}")
-        else:
-            print(f"Test_{self.metric} = {test_score:.4f}")
+        printMetric(self.metric, val_score, 'validation')
+        printMetric(self.metric, test_score, 'test')
         return dict(Acc=test_score, ValAcc=val_score)
 
     def _full_train_step(self):
