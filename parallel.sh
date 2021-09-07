@@ -1,8 +1,8 @@
 #!/bin/bash
-# execute: ./parallel.h 2
+# execute: ./parallel.sh 2
 # 2 means gpu
-#aggrs=(gcnconv gatconv sageconv ginconv)
-aggrs=(gcnconv)
+aggrs=(gcnconv gatconv sageconv ginconv)
+#aggrs=(gcnconv)
 datasets=(HGBn-ACM HGBn-DBLP HGBn-Freebase HGBn-IMDB)
 models=(homo_GNN relation_HGNN mp_GNN)
 #models=(homo_GNN relation_HGNN)
