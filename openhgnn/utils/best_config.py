@@ -107,6 +107,7 @@ BEST_CONFIGS = {
         },
         'DMGI': {
             'general': {
+
                 'seed': 0,  'sc': 3, 'learning_rate' : 0.0005
             },
             'acm_han_raw': {'l2_coef': 0.0001, 'dropout': 0.5,'reg_coef': 0.001,
@@ -123,22 +124,22 @@ BEST_CONFIGS = {
                 'seed': 0, 'patience': 20, 'validation': True
             },
             'aifb': {
-                'lr': 0.01, 'weight_decay': 0, 'max_epoch': 50, 'in_dim': 16,
-                'hidden_dim': 16, 'n_bases': -1, 'n_layers': 2, 'batch_size': 126, 'dropout': 0,
+                'lr': 0.005, 'weight_decay': 0, 'max_epoch': 100,
+                'hidden_dim': 32, 'n_bases': -1, 'n_layers': 2, 'batch_size': 126, 'dropout': 0,
                 'mini_batch_flag': False, 'validation': True
                      },
             'mutag': {
-                'lr': 0.01, 'weight_decay': 0.0005, 'max_epoch': 50, 'in_dim': 8,
-                'hidden_dim': 16, 'n_bases': 30, 'n_layers': 2, 'batch_size': 50, 'fanout': 4, 'dropout': 0.05,
+                'lr': 0.005, 'weight_decay': 0.0005, 'max_epoch': 50,
+                'hidden_dim': 32, 'n_bases': 30, 'n_layers': 2, 'batch_size': 50, 'fanout': 4, 'dropout': 0.5,
                 'mini_batch_flag': False, 'validation': True
             },
             'bgs': {
-                'lr': 0.005, 'weight_decay': 0.0005, 'max_epoch': 50, 'in_dim': 32,
+                'lr': 0.005, 'weight_decay': 0.0005, 'max_epoch': 50,
                 'hidden_dim': 16, 'n_bases': 40, 'n_layers': 3, 'batch_size': 126, 'fanout': 4, 'dropout': 0.1,
-                'mini_batch_flag': False, 'validation': True
+                'mini_batch_flag': True, 'validation': True
             },
             'am': {
-                'lr': 0.01, 'weight_decay': 0.0005, 'max_epoch': 100, 'in_dim': 16,
+                'lr': 0.01, 'weight_decay': 0.0005, 'max_epoch': 50,
                 'hidden_dim': 16, 'n_bases': 40, 'n_layers': 2, 'batch_size': 126, 'fanout': 4, 'dropout': 0,
                 'mini_batch_flag': True, 'validation': True
             },
@@ -177,5 +178,14 @@ BEST_CONFIGS = {
             'lr': 0.01, 'weight_decay': 0.0001, 'dim': 128, 'batch_size': 64, 'window_size': 5,
             'batches_per_epoch': 50, 'rw_length': 50, 'rw_walks': 10, 'rwr_prob': 0.5,
         }
-    }
+    },
+    "recommendation": {
+        'KGCN': {
+            "general": {},
+            'LastFM4KGCN': {
+                'in_dim': 16, 'hidden_dim': 16, 'n_relation': 60,
+                'batch_size': 128, 'lr' : 0.0005
+            },
+        }
+    },
 }
