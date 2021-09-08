@@ -227,3 +227,4 @@ class AttentionLayer(nn.Module):
 
         # return a new attribute
         return self.activation(h_prime)
+    
