@@ -1,11 +1,11 @@
 import os
 import dgl
+import random
 import torch as th
 from . import BaseDataset, register_dataset
 from dgl.data.utils import load_graphs
-from ..sampler.negative_sampler import Uniform_exclusive
-import sys
-sys.path.append("..")
+from .multigraph import MultiGraphDataset
+from openhgnn.sampler.negative_sampler import Uniform_exclusive
 
 
 @register_dataset('recommendation')
@@ -13,8 +13,34 @@ class RecommendationDataset(BaseDataset):
     """
 
     """
-    def __init__(self,):
+
+    def __init__(self, ):
         super(RecommendationDataset, self).__init__()
+
+
+@register_dataset('kgcn_recommendation')
+class KGCN_Recommendation(RecommendationDataset):
+    def __init__(self, dataset_name):
+        super(RecommendationDataset, self).__init__()
+        dataset = MultiGraphDataset(name=dataset_name, raw_dir='')
+        self.g = dataset[0].long()
+        self.g_1 = dataset[1].long()
+
+    def get_idx(self, validation=True):
+        ratingsGraph = self.g_1
+        n_edges = ratingsGraph.num_edges()
+        random_int = th.randperm(n_edges)
+        train_idx = random_int[:int(n_edges * 0.6)]
+        val_idx = random_int[int(n_edges * 0.6):int(n_edges * 0.8)]
+        test_idx = random_int[int(n_edges * 0.6):int(n_edges * 0.8)]
+
+        return train_idx, val_idx, test_idx
+
+    def get_train_data(self):
+        pass
+
+    def get_labels(self):
+        return self.label
 
 
 @register_dataset('hin_recommendation')
@@ -23,7 +49,7 @@ class HINRecommendation(RecommendationDataset):
         super(HINRecommendation, self).__init__()
         self.dataset_name = dataset_name
         self.num_neg = 20
-        #self.neg_dir = os.path.join(self.raw_dir, dataset_name, 'neg_{}.bin'.format(self.num_neg))
+        # self.neg_dir = os.path.join(self.raw_dir, dataset_name, 'neg_{}.bin'.format(self.num_neg))
         self.g = self.load_HIN('./openhgnn/dataset/yelp.bin')
         self.target_link = 'user-item'
         self.target_link_r = 'item-user'
@@ -38,7 +64,7 @@ class HINRecommendation(RecommendationDataset):
         new = {}
         for etype in g.canonical_etypes:
             edges = g.edges(etype=etype)
-            new[etype] = (edges[0]-1, edges[1]-1)
+            new[etype] = (edges[0] - 1, edges[1] - 1)
         hg = dgl.heterograph(new)
         hg.edata['val_mask'] = g.edata['val_mask']
         hg.edata['test_mask'] = g.edata['test_mask']
@@ -56,9 +82,9 @@ class HINRecommendation(RecommendationDataset):
         test_edge = self.g.find_edges(test_index, self.target_link)
 
         val_graph = dgl.heterograph({('user', 'user-item', 'item'): val_edge},
-                                         {ntype: self.g.number_of_nodes(ntype) for ntype in ['user', 'item']})
+                                    {ntype: self.g.number_of_nodes(ntype) for ntype in ['user', 'item']})
         test_graph = dgl.heterograph({('user', 'user-item', 'item'): test_edge},
-                                          {ntype: self.g.number_of_nodes(ntype) for ntype in ['user', 'item']})
+                                     {ntype: self.g.number_of_nodes(ntype) for ntype in ['user', 'item']})
 
         train_graph = dgl.remove_edges(self.g, th.cat((val_index, test_index)), self.target_link)
         train_graph = dgl.remove_edges(train_graph, th.cat((val_index, test_index)), self.target_link_r)
@@ -90,7 +116,7 @@ class Test_Recommendation(RecommendationDataset):
         self.target_link = 'user-item'
         self.has_feature = False
         self.preprocess()
-        #self.generate_negative()
+        # self.generate_negative()
 
     def load_HIN(self, dataset_name):
         g, _ = load_graphs(dataset_name)
@@ -100,7 +126,8 @@ class Test_Recommendation(RecommendationDataset):
         test_mask = self.g.edges[self.target_link].data['test_mask']
         index = th.nonzero(test_mask).squeeze()
         self.test_edge = self.g.find_edges(index, self.target_link)
-        self.pos_test_graph = dgl.heterograph({('user', 'user-item', 'item'): self.test_edge}, {ntype: self.g.number_of_nodes(ntype) for ntype in ['user', 'item']})
+        self.pos_test_graph = dgl.heterograph({('user', 'user-item', 'item'): self.test_edge},
+                                              {ntype: self.g.number_of_nodes(ntype) for ntype in ['user', 'item']})
         self.g.remove_edges(index, self.target_link)
         self.g.remove_edges(index, 'item-user')
         self.neg_test_graph, _ = dgl.load_graphs('./openhgnn/debug/neg.bin')
@@ -108,7 +135,9 @@ class Test_Recommendation(RecommendationDataset):
         return
 
         negative_sampler = Uniform_exclusive(99)
-        self.negative_g = negative_sampler(self.hg.to('cpu'), {self.target_link: th.arange(self.hg.num_edges(self.target_link))})
+        self.negative_g = negative_sampler(self.hg.to('cpu'),
+                                           {self.target_link: th.arange(self.hg.num_edges(self.target_link))})
+
     def generate_negative(self):
         k = 99
         e = self.pos_test_graph.edges()
@@ -125,5 +154,6 @@ class Test_Recommendation(RecommendationDataset):
             neg_src.append(src)
             neg_dst.append(dst)
         neg_edge = (th.cat(neg_src), th.cat(neg_dst))
-        neg_graph = dgl.heterograph({('user', 'user-item', 'item'): neg_edge}, {ntype: self.g.number_of_nodes(ntype) for ntype in ['user', 'item']})
+        neg_graph = dgl.heterograph({('user', 'user-item', 'item'): neg_edge},
+                                    {ntype: self.g.number_of_nodes(ntype) for ntype in ['user', 'item']})
         dgl.save_graphs('./openhgnn/debug/neg.bin', neg_graph)
