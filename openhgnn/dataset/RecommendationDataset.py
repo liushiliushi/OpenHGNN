@@ -43,6 +43,33 @@ class KGCN_Recommendation(RecommendationDataset):
         return self.label
 
 
+@register_dataset('kgcn_recommendation')
+class KGCN_Recommendation(RecommendationDataset):
+    def __init__(self, dataset_name):
+            super(RecommendationDataset, self).__init__()
+            dataset = MultiGraphDataset(name=dataset_name, raw_dir='')
+            self.g = dataset[0].long()
+            self.g_1 = dataset[1].long()
+
+
+    def get_idx(self, validation=True):
+        ratingsGraph = self.g_1
+        n_edges = ratingsGraph.num_edges()
+        random_int = th.randperm(n_edges)
+        train_idx = random_int[:int(n_edges*0.6)]
+        val_idx = random_int[int(n_edges*0.6):int(n_edges*0.8)]
+        test_idx = random_int[int(n_edges*0.6):int(n_edges*0.8)]
+
+        return train_idx, val_idx, test_idx
+    
+    def get_train_data(self):
+        pass
+
+    def get_labels(self):
+        return self.label
+    
+
+
 @register_dataset('hin_recommendation')
 class HINRecommendation(RecommendationDataset):
     def __init__(self, dataset_name):
