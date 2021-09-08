@@ -4,30 +4,29 @@ import torch.nn.functional as F
 import numpy as np
 from . import BaseModel, register_model
 
-
 @register_model('HGNN_AC')
 class HGNN_AC(BaseModel):
     r"""
     Desctiption
     -----------
     HGNN_AC was introduced in `HGNN_AC <https://dl.acm.org/doi/10.1145/3442381.3449914>`__.
-
+        
     It included four parts:
 
     - Pre-learning of Topological Embedding
-        HGNN-AC first obtains more comprehensive node sequences by random walk according to the frequently used multiple meta-paths,
+        HGNN-AC first obtains more comprehensive node sequences by random walk according to the frequently used multiple meta-paths, 
         and then feeds these sequences to the skip-gram model to learn node embeddings :math:`H`.
-
+        
     - Attribute Completion with Attention Mechanism
-        HGNN-AC adopts a masked attention mechanism which means we only calculate :math:`e_{vu}` for nodes :math:`u\in{N_v^+}`,
-        where :math:`u\in{N_v^+}` denotes the first-order neighbors of node :math:`v`
+        HGNN-AC adopts a masked attention mechanism which means we only calculate :math:`e_{vu}` for nodes :math:`u\in{N_v^+}`, 
+        where :math:`u\in{N_v^+}` denotes the first-order neighbors of node :math:`v` 
         in set :math:`V^+`, where :math:`V^+` is the set of nodes with attributes.
-
+        
         .. math::
            e_{vu}=\sigma(h_v^{T}Wh_u)
-
+        
         where :math:`W` is the parametric matrix, and :math:`\sigma` an activation function.
-
+    
         Then, softmax function is applied to get normalized weighted coefficient :math:`a_{vu}`
 
         .. math::
@@ -43,7 +42,7 @@ class HGNN_AC(BaseModel):
         and :math:`x_u` denotes the attributes of nodes :math:`u`.
 
         .. _here:
-
+        
         Specially, the attention process is extended to a multi-head attention
         to stabilize the learning process and reduce the high variance
 
@@ -55,21 +54,21 @@ class HGNN_AC(BaseModel):
     - Dropping some Attributes
         To be specific, for nodes in :math:`V^+`, HGNN-AC randomly divides them into two parts
         :math:`V_{drop}^+` and :math:`V_{keep}^+` according to a small ratio :math:`\alpha`, i.e. :math:`|V_{drop}^+|=\alpha|V^+|`.
-        HGNN-AC first drops attributes of nodes in :math:`V_{drop}^+` and then
+        HGNN-AC first drops attributes of nodes in :math:`V_{drop}^+` and then 
         reconstructs these attributes via attributes of nodes :math:`V_{drop}^+` by conducting
         attribute completion.
-
+        
         .. math::
            X_v^C=mean(\sum_k^K {\sum_{u\in{V_{keep}^+ \cap V_i^+}}{a_{vu}x_u}})
 
-        It introduced a weakly supervised loss to optimize the parameters of attribute completion
+        It introduced a weakly supervised loss to optimize the parameters of attribute completion 
         and use euclidean distance as the metric to design the loss function as:
-
+    
         .. math::
            L_{completion}=\frac{1}{|V_{drop}^+|}\sum_{i \in V_{drop}^+} \sqrt{(X_i^C-X_i)^2}
-
+    
     - Combination with HIN Model
-        Now, we have completed attributes nodes in :math:`V^-`(the set of nodes without attribute), and the raw attributes nodes in :math:`V+`,
+        Now, we have completed attributes nodes in :math:`V^-`(the set of nodes without attribute), and the raw attributes nodes in :math:`V+`, 
         Wthen the new attributes of all nodes are defined as:
 
         .. math::
@@ -81,7 +80,7 @@ class HGNN_AC(BaseModel):
         .. math::
            \overline{Y}=\Phi(A,X^{new})
            L_{prediction}=f(\overline{Y},Y)
-
+        
         where :math:`\Phi` denotes an arbitrary HINs model.
 
         the overall model can be optimized via back propagation in an end-to-end
@@ -89,15 +88,15 @@ class HGNN_AC(BaseModel):
 
         .. math::
            L=\lambda L_{completion}+L_{prediction}
-
+    
         where :math:`\lambda` is a weighted coefficient to balance these two parts.
-
+        
     Parameters
     ----------
     in_dim: int
         nodes' topological embedding dimension
     hidden_dim: int
-        hidden dimension
+        hidden dimension 
     dropout: float
         the dropout rate of neighbor nodes dropout
     activation: callable activation function
@@ -105,15 +104,13 @@ class HGNN_AC(BaseModel):
     num_heads: int
         the number of heads in attribute completion with attention mechanism
     """
-
     @classmethod
     def build_model_from_args(cls, args, hg):
-        return cls(in_dim=hg.nodes[hg.ntypes[0]].data['emb'].shape[1],
-                   hidden_dim=args.attn_vec_dim,
-                   dropout=args.dropout, activation=F.elu,
-                   num_heads=args.num_heads,
-                   cuda=False if args.device == torch.device('cpu') else True)
-
+        return cls(in_dim = hg.nodes[hg.ntypes[0]].data['emb'].shape[1], 
+                                hidden_dim = args.attn_vec_dim, 
+                                dropout = args.dropout, activation = F.elu, 
+                                num_heads = args.num_heads,
+                                cuda = False if args.device == torch.device('cpu') else True)
     def __init__(self, in_dim, hidden_dim, dropout, activation, num_heads, cuda):
         super(HGNN_AC, self).__init__()
         self.dropout = dropout
@@ -138,19 +135,19 @@ class HGNN_AC(BaseModel):
             embeddings of the source node
         feature_src: matrix
             features of the source node
-
+            
         Returns
         -------
         features: matrix
             the new features of the type of node
         """
-
-        # Attribute Completion with Attention Mechanism
+        
+        #Attribute Completion with Attention Mechanism
         adj = F.dropout(bias, self.dropout, training=self.training)
-        # x = sum_k(x_v)
+        #x = sum_k(x_v)
         x = torch.cat([att(adj, emb_dest, emb_src, feature_src).unsqueeze(0) for att in self.attentions], dim=0)
 
-        # X_{v}^{C} = mean(x)
+        #X_{v}^{C} = mean(x)
         return torch.mean(x, dim=0, keepdim=False)
 
 
@@ -159,7 +156,7 @@ class AttentionLayer(nn.Module):
     Description
     -------------------
     This is the attention process used in HGNN\_AC. For more details, you can check here_.
-
+    
     Parameters
     -------------------
     in_dim: int
@@ -171,7 +168,6 @@ class AttentionLayer(nn.Module):
     activation: callable activation function
         the activation function used in HGNN_AC.  default: ``F.elu``
     """
-
     def __init__(self, in_dim, hidden_dim, dropout, activation, cuda=False):
         super(AttentionLayer, self).__init__()
         self.dropout = dropout
@@ -192,7 +188,7 @@ class AttentionLayer(nn.Module):
         Description
         ----------------
         This is the forward part of the attention process.
-
+        
         Parameters
         --------------
         bias: matrix
@@ -203,7 +199,7 @@ class AttentionLayer(nn.Module):
             the embeddings of the source nodes
         feature_src: matrix
             the features of the source nodes
-
+        
         Returns
         ------------
         features: matrix
@@ -212,19 +208,18 @@ class AttentionLayer(nn.Module):
         h_1 = torch.mm(emb_src, self.W)
         h_2 = torch.mm(emb_dest, self.W)
 
-        # contribution of the neighbor nodes using a masked attention
-        # e_{vu} = activation(h_v * W * h_u)
+        #contribution of the neighbor nodes using a masked attention
+        #e_{vu} = activation(h_v * W * h_u)
         e = self.leakyrelu(torch.mm(torch.mm(h_2, self.W2), h_1.t()))
         zero_vec = -9e15 * torch.ones_like(e)
         attention = torch.where(bias > 0, e, zero_vec)
-
-        # get normalized weighted coefficient
-        # a_{vu} = softmax(e_{vu})
+        
+        #get normalized weighted coefficient
+        #a_{vu} = softmax(e_{vu})
         attention = F.softmax(attention, dim=1)
         attention = F.dropout(attention, self.dropout, training=self.training)
-        # x_v = sum(a_{vu} * x_u)
+        #x_v = sum(a_{vu} * x_u)
         h_prime = torch.matmul(attention, feature_src)
 
-        # return a new attribute
+        #return a new attribute
         return self.activation(h_prime)
-    
