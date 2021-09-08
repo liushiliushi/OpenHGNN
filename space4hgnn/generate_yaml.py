@@ -19,7 +19,7 @@ dropout = [0.0, 0.3, 0.6]
 lr = [0.1, 0.01, 0.001]
 weight_decay = 0.0001
 patience = 40
-max_epoch = 10
+max_epoch = 5
 
 
 def makeDict(aggr, key, value):
@@ -54,7 +54,7 @@ def generate(aggr, i, key, value):
     elif key == 'stage_type' or key == 'activation' or key == 'macro_func':
         value = value
     else:
-        value = int(value)
+        value = float(value)
     for a in datasets:
         dict = {}
         for b in models:
