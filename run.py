@@ -10,10 +10,13 @@ def OpenHGNN(args):
     for i in range(args.repeat):
         args.seed = i
         set_random_seed(args.seed)
-        path = './prediction/{}_{}/{}_{}_{}'.format(args.key, args.value, args.model, args.aggregation, args.times)
+        path = './prediction/{}_{}_{}'.format(args.model, args.aggregation, args.times)
         if not os.path.exists(path):
             os.makedirs(path)
-        args.HGB_results_path = './prediction/{}_{}/{}_{}_{}/{}_{}.txt'.format(args.key, args.value,args.model, args.aggregation, args.times, args.dataset[5:], str(i+1))
+        if 'HGB' in args.dataset:
+            args.HGB_results_path = './prediction/{}_{}_{}/{}_{}.txt'.format(args.model, args.aggregation, args.times, args.dataset[5:], str(i+1))
+        else:
+            args.results_path = './prediction/{}_{}_{}/{}_{}.txt'.format(args.model, args.aggregation, args.times, args.dataset, str(i+1))
         print(args)
         flow = build_flow(args, args.task)
         flow.train()
@@ -29,8 +32,6 @@ if __name__ == '__main__':
     parser.add_argument('--repeat', '-r', default='5', type=int, help='-1 means cpu')
     parser.add_argument('--aggregation', '-a', default='gcnconv', type=str, help='aggregation type')
     parser.add_argument('--times', '-s', default=2, type=int, help='which yaml file')
-    parser.add_argument('--key', '-k', default='has_bn', type=str, help='attribute')
-    parser.add_argument('--value', '-v', default='True', type=str, help='value')
     args = parser.parse_args()
 
     args = read_config(args)
