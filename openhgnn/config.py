@@ -23,13 +23,13 @@ class Config(object):
         # training dataset path
         self.seed = 0
         self.patience = 1
-        self.max_epoch = 1
+        self.max_epoch = 100
         self.task = task
         self.model = model
         self.dataset = dataset
         self.path = {'output_modelfold': './output/models/',
-                     'input_fold': './dataset/' + self.dataset + '/',
-                     'temp_fold': './output/temp/' + self.model + '/'}
+                     'input_fold': './dataset/'+self.dataset+'/',
+                     'temp_fold': './output/temp/'+self.model+'/'}
 
         if model == "NSHE":
             self.dim_size = {}
@@ -143,7 +143,7 @@ class Config(object):
             self.lr = conf.getfloat("HetGNN", "learning_rate")
             self.weight_decay = conf.getfloat("HetGNN", "weight_decay")
 
-            # self.dropout = conf.getfloat("CompGCN", "dropout")
+            #self.dropout = conf.getfloat("CompGCN", "dropout")
             self.max_epoch = conf.getint("HetGNN", "max_epoch")
             self.dim = conf.getint("HetGNN", "dim")
             self.batch_size = conf.getint("HetGNN", "batch_size")
@@ -161,7 +161,7 @@ class Config(object):
             self.lr = conf.getfloat("Metapath2vec", "learning_rate")
             self.weight_decay = conf.getfloat("Metapath2vec", "weight_decay")
 
-            # self.dropout = conf.getfloat("CompGCN", "dropout")
+            #self.dropout = conf.getfloat("CompGCN", "dropout")
             self.max_epoch = conf.getint("Metapath2vec", "max_epoch")
             self.dim = conf.getint("Metapath2vec", "dim")
             self.batch_size = conf.getint("Metapath2vec", "batch_size")
@@ -225,7 +225,7 @@ class Config(object):
             self.max_epoch = conf.getint('MAGNN', 'max_epoch')
             self.mini_batch_flag = conf.getboolean("MAGNN", "mini_batch_flag")
             self.encoder_type = conf.get('MAGNN', 'encoder_type')
-
+        
         elif model == 'RHGNN':
             self.lr = conf.getfloat("RHGNN", "learning_rate")
             self.num_heads = conf.getint("RHGNN", "num_heads")
@@ -236,7 +236,6 @@ class Config(object):
             self.residual = conf.getboolean("RHGNN", "residual")
             self.batch_size = conf.getint("RHGNN", "batch_size")
             self.node_neighbors_min_num = conf.getint("RHGNN", "node_neighbors_min_num")
-            # self.optimizer = conf.get
             self.weight_decay = conf.getfloat("RHGNN", "weight_decay")
             self.max_epoch = conf.getint("RHGNN", "max_epoch")
             self.patience = conf.getint("RHGNN", "patience")
@@ -247,13 +246,13 @@ class Config(object):
             self.n_heads = conf.getint("RHGNN", "n_heads")
             self.category = conf.get("RHGNN", "category")
             self.out_dim = conf.getint("RHGNN", "out_dim")
-
+        
         elif model == 'MAGNN_AC':
             self.lr = conf.getfloat("MAGNN_AC", "learning_rate")
             self.weight_decay = conf.getfloat("MAGNN_AC", "weight_decay")
             self.seed = conf.getint("MAGNN_AC", "seed")
             self.dropout = conf.getfloat("MAGNN_AC", "dropout")
-
+            
             self.feats_drop_rate = conf.getfloat("MAGNN_AC", "feats_drop_rate")
             self.attn_vec_dim = conf.getint("MAGNN_AC", "attn_vec_dim")
             self.feats_opt = conf.get("MAGNN_AC", "feats_opt")
@@ -270,7 +269,7 @@ class Config(object):
             self.max_epoch = conf.getint('MAGNN_AC', 'max_epoch')
             self.mini_batch_flag = conf.getboolean("MAGNN_AC", "mini_batch_flag")
             self.encoder_type = conf.get('MAGNN_AC', 'encoder_type')
-
+        
         elif model == 'HGT':
             self.lr = conf.getfloat("HGT", "learning_rate")
             self.weight_decay = conf.getfloat("HGT", "weight_decay")
@@ -293,7 +292,7 @@ class Config(object):
             self.l2_coef = conf.getfloat("DMGI", "l2_coef")
             self.sc = conf.getint("DMGI", "sc")
             self.seed = conf.getint("DMGI", "seed")
-            self.sup_coef = conf.getfloat("DMGI", 'sup_coef')
+            self.sup_coef = conf.getfloat("DMGI",'sup_coef')
             self.reg_coef = conf.getfloat("DMGI", "reg_coef")
             self.dropout = conf.getfloat("DMGI", "dropout")
             self.hid_unit = conf.getint('DMGI', 'hid_unit')
@@ -329,6 +328,33 @@ class Config(object):
             self.n_item = conf.getint("KGCN", "n_relation")
             self.n_user = conf.getint("KGCN", "n_user")
             self.epoch_iter = conf.getint("KGCN", "epoch_iter")
+        elif model == 'HGSL':
+            self.seed = conf.getint("HGSL", "seed")
+            self.mini_batch_flag = conf.getboolean("HGSL", "mini_batch_flag")
+            self.max_epoch = conf.getint("HGSL", "max_epoch")
+            self.patience = conf.getint("HGSL", "patience")
+            self.lr = conf.getfloat("HGSL", "learning_rate")
+            self.weight_decay = conf.getfloat("HGSL", "weight_decay")
+            self.adaptive_lr_flag = conf.getboolean("HGSL", "adaptive_lr_flag")
+
+            self.hidden_dim = conf.getint("HGSL", "hidden_dim")
+            self.num_heads = conf.getint("HGSL", "num_heads")
+            self.fs_eps = conf.getfloat("HGSL", "fs_eps")
+            self.fp_eps = conf.getfloat("HGSL", "fp_eps")
+            self.mp_eps = conf.getfloat("HGSL", "mp_eps")
+            self.gnn_emd_dim = conf.getint("HGSL", "gnn_emd_dim")
+            self.gnn_dropout = conf.getfloat("HGSL", "gnn_dropout")
+            # self.undirected_relations = conf.get("HGSL", "undirected_relations")
+        elif model == 'RGAT':
+            self.lr = conf.getfloat("RGAT", "learning_rate")
+            self.weight_decay = conf.getfloat("RGAT", "weight_decay")
+            self.mini_batch_flag = conf.getboolean("HGSL", "mini_batch_flag")
+
+            self.dropout = conf.getfloat("RGAT", "dropout")
+            self.hidden_dim = conf.getint("RGAT", "hidden_dim")
+            self.num_heads = conf.getint("RGAT", "num_heads")
+            self.dropout = conf.getfloat("RGAT", "dropout")
+            # self.undirected_relations = conf.get("HGSL", "undirected_relations")
 
     def __repr__(self):
         return 'Model:' + self.model + '\nTask:' + self.task + '\nDataset:' + self.dataset
