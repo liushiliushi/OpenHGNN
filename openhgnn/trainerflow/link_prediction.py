@@ -1,15 +1,10 @@
-import copy
 import dgl
-import numpy as np
 import torch as th
 from tqdm import tqdm
-import torch.nn as nn
 import torch
 import torch.nn.functional as F
 from . import BaseFlow, register_flow
-from ..tasks import build_task
 from ..models import build_model
-from ..layers.HeteroLinear import HeteroFeature
 from dgl.dataloading.negative_sampler import Uniform
 from ..utils import extract_embed, EarlyStopping, get_nodes_dict
 
@@ -25,12 +20,13 @@ class LinkPrediction(BaseFlow):
         self.loss_fn = self.task.get_loss_fn()
         self.args.has_feature = self.task.dataset.has_feature
 
-        self.args.out_node_type = self.task.dataset.ntypes
+        self.args.out_node_type = self.task.dataset.out_ntypes
+        self.args.out_dim = self.args.hidden_dim
+
         self.model = build_model(self.model_name).build_model_from_args(self.args, self.hg)
         self.model = self.model.to(self.device)
 
-        self.evaluator = self.task.get_evaluator('mrr')
-
+        self.evaluator = self.task.get_evaluator('roc_auc')
         self.optimizer = (
             th.optim.Adam(self.model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
         )
@@ -46,11 +42,9 @@ class LinkPrediction(BaseFlow):
         self.positive_graph = self.train_hg.edge_type_subgraph(self.target_link)
         self.preprocess_feature()
 
-
     def train(self):
         self.preprocess()
         epoch_iter = tqdm(range(self.max_epoch))
-        best_model = copy.deepcopy(self.model)
         stopper = EarlyStopping(self.args.patience, self._checkpoint)
         for epoch in tqdm(range(self.max_epoch), ncols=80):
             if self.args.mini_batch_flag:
@@ -58,31 +52,31 @@ class LinkPrediction(BaseFlow):
             else:
                 loss = self._full_train_setp()
             if epoch % 2 == 0:
-                metric = self._test_step()
+                val_metric = self._test_step('valid')
                 epoch_iter.set_description(
-                    f"Epoch: {epoch:03d}, roc_auc: {metric:.4f}, Loss:{loss:.4f}"
+                    f"Epoch: {epoch:03d}, roc_auc: {val_metric:.4f}, Loss:{loss:.4f}"
                 )
-                early_stop = stopper.step_score(metric, self.model)
+                early_stop = stopper.step_score(val_metric, self.model)
                 if early_stop:
                     print('Early Stop!\tEpoch:' + str(epoch))
                     break
         print(f"Valid_score_ = {stopper.best_score: .4f}")
         stopper.load_model(self.model)
 
-
         ############ TEST SCORE #########
         if self.args.dataset[:4] == 'HGBl':
             self.model.eval()
             with torch.no_grad():
                 h_dict = self.input_feature()
+                val_metric = self._test_step('valid')
                 embedding = self.model(self.hg, h_dict)
                 score = th.sigmoid(self.ScorePredictor(self.test_hg, embedding))
-                self.task.dataset.save_results(logits=score, file_path=self.args.HGB_results_path)
-            return
+                self.task.dataset.save_results(hg=self.test_hg, score=score, file_path=self.args.HGB_results_path)
+            return dict(Val_score=val_metric)
         test_mrr = self._test_step(split="test")
         val_mrr = self._test_step(split="val")
         print(f"Test mrr = {test_mrr:.4f}")
-        return dict(Test_mrr=test_mrr, ValMrr=val_mrr)
+        return dict(Test_mrr=test_mrr, Val_mrr=val_mrr)
 
     def _mini_train_step(self,):
         self.model.train()
@@ -157,13 +151,13 @@ class LinkPrediction(BaseFlow):
         with th.no_grad():
             h_dict = self.input_feature()
             embedding = self.model(self.hg, h_dict)
-            negative_graph = self.construct_negative_graph(self.val_hg)
-            p_score = th.sigmoid(self.ScorePredictor(self.val_hg, embedding))
+            if split == 'valid':
+                eval_hg = self.val_hg
+            negative_graph = self.construct_negative_graph(eval_hg)
+            p_score = th.sigmoid(self.ScorePredictor(eval_hg, embedding))
             n_score = th.sigmoid(self.ScorePredictor(negative_graph, embedding))
             p_label = th.ones(len(p_score), device=self.device)
             n_label = th.zeros(len(n_score), device=self.device)
-
-        from sklearn.metrics import f1_score, auc, roc_auc_score
-        metric = roc_auc_score(th.cat((p_label, n_label)).cpu(), th.cat((p_score, n_score)).cpu() )
+        metric = self.evaluator(th.cat((p_label, n_label)).cpu(), th.cat((p_score, n_score)).cpu() )
 
         return metric

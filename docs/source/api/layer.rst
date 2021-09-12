@@ -45,3 +45,17 @@ HeteroFeature
 .. autoclass:: openhgnn.layers.HeteroLinear.HeteroFeature
     :members:
     :show-inheritance:
+
+MetapathConv
+------------------------------------
+
+.. automodule:: openhgnn.layers.MetapathConv
+    :members:
+    :show-inheritance:
+
+HeteroGraphConv
+----------------
+
+.. autoclass:: dgl.nn.pytorch.HeteroGraphConv
+   :members:
+   :show-inheritance:

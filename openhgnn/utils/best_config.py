@@ -2,7 +2,7 @@ BEST_CONFIGS = {
     "node_classification": {
         'RGCN': {
             'general': {
-                'seed': 0, 'patience': 20, 'validation': True
+                'seed': 0, 'patience': 20, 'validation': True, 'metric': 'acc'
             },
             'aifb': {
                 'lr': 0.005, 'weight_decay': 0, 'max_epoch': 100,
@@ -29,10 +29,21 @@ BEST_CONFIGS = {
                 'hidden_dim': 16, 'n_bases': -1, 'n_layers': 2, 'batch_size': 126, 'fanout': 4, 'dropout': 0,
                 'mini_batch_flag': True, 'validation': True
             },
+            'HGBn-ACM': {
+
+            },
+            'HGBn-DBLP': {
+                'n_layers': 2, 'hidden_dim': 16, 'dropout': 0.5
+            },
+            'HGBn-Freebase': {
+                'n_layers': 5, 'hidden_dim': 16, 'dropout': 0.5
+            },
+            'HGBn-IMDB': {
+            }
         },
         'CompGCN': {
             'general': {
-                'seed': 0, 'patience': 50, 'validation': True
+                'seed': 0, 'patience': 50, 'validation': True, 'metric': 'acc'
             },
             'aifb': {
                 'lr': 0.01, 'weight_decay': 0.0001, 'max_epoch': 100,
@@ -41,7 +52,7 @@ BEST_CONFIGS = {
                      },
             'mutag': {
                 'lr': 0.01, 'weight_decay': 0.0001, 'max_epoch': 100,
-                'hidden_dim': 32, 'n_layers': 2, 'dropout': 0.5, 'comp_fn': 'sub',
+                'hidden_dim': 32, 'n_layers': 3, 'dropout': 0.5, 'comp_fn': 'sub',
                 'mini_batch_flag': False, 'validation': True
             },
             'bgs': {
@@ -167,20 +178,28 @@ BEST_CONFIGS = {
             },
             'am': {'hidden_dim': 16, 'num_node_layer': 2, 'num_edge_layer': 2, 'rw_len': 4, 'batch_size': 5000
                    },
+        },
+        'HGSL': {
+            'general': {},
+            'acm4GTN': {
+                'undirected_relations': 'author-paper,paper-subject', 'gnn_dropout': 0, 'fs_eps': 0.8,
+                'fp_eps': 0.2, 'mp_eps': 0.6,
+            }
         }
 
     },
-    "entity_classification": {
-        "deepwalk": {
-            "general": {},
-        },
-    },
     "link_prediction": {
-        'general': {'max_epoch': 500, 'patience': 10, 'mini_batch_flag': True},
-        'academic4HetGNN': {
-            'lr': 0.01, 'weight_decay': 0.0001, 'dim': 128, 'batch_size': 64, 'window_size': 5,
-            'batches_per_epoch': 50, 'rw_length': 50, 'rw_walks': 10, 'rwr_prob': 0.5,
+        'NARS': {
+            'general': {'num_hops': 3},
+        },
+        'HetGNN':{
+            'general': {'max_epoch': 500, 'patience': 10, 'mini_batch_flag': True},
+            'academic4HetGNN': {
+                'lr': 0.01, 'weight_decay': 0.0001, 'dim': 128, 'batch_size': 64, 'window_size': 5,
+                'batches_per_epoch': 50, 'rw_length': 50, 'rw_walks': 10, 'rwr_prob': 0.5,
+            }
         }
+
     },
     "recommendation": {
         'KGCN': {

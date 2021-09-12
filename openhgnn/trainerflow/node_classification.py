@@ -3,7 +3,6 @@ import torch
 from tqdm import tqdm
 from ..utils.sampler import get_node_data_loader
 from ..models import build_model
-from ..layers.HeteroLinear import HeteroFeature
 from . import BaseFlow, register_flow
 from ..utils.logger import printInfo, printMetric
 from ..utils import extract_embed, EarlyStopping, get_nodes_dict
@@ -11,10 +10,8 @@ from ..utils import extract_embed, EarlyStopping, get_nodes_dict
 
 @register_flow("node_classification")
 class NodeClassification(BaseFlow):
-
-    """Node classification flows.
-    Supported Model: HAN/MAGNN/GTN
-    Supported Dataset：ACM
+    r"""
+    Node classification flow means
 
     The task is to classify the nodes of HIN(Heterogeneous Information Network).
     
@@ -40,8 +37,7 @@ class NodeClassification(BaseFlow):
         self.category = self.args.category
         self.args.out_node_type = [self.category]
 
-        self.model = build_model(self.model_name).build_model_from_args(self.args, self.hg)
-        self.model = self.model.to(self.device)
+        self.model = build_model(self.model_name).build_model_from_args(self.args, self.hg).to(self.device)
 
         self.evaluator = self.task.get_evaluator('f1')
 
@@ -55,6 +51,7 @@ class NodeClassification(BaseFlow):
             self.train_loader = dgl.dataloading.NodeDataLoader(
                 self.hg.to('cpu'), {self.category: self.train_idx.to('cpu')}, sampler,
                 batch_size=self.args.batch_size, device=self.device, shuffle=True, num_workers=0)
+
 
     def preprocess(self):
         if self.args.model == 'GTN':
@@ -120,7 +117,7 @@ class NodeClassification(BaseFlow):
                     break
 
         stopper.load_model(self.model)
-        ############ TEST SCORE #########
+        # save results for HGBn
         if self.args.dataset[:4] == 'HGBn':
 
             if self.args.mini_batch_flag and hasattr(self, 'val_loader'):
@@ -144,7 +141,7 @@ class NodeClassification(BaseFlow):
 
         printMetric(self.metric, val_score, 'validation')
         printMetric(self.metric, test_score, 'test')
-        return dict(Acc=test_score, ValAcc=val_score)
+        return dict(Test_score=test_score, ValAcc=val_score)
 
     def _full_train_step(self):
         self.model.train()
@@ -237,4 +234,3 @@ class NodeClassification(BaseFlow):
         evaluator = self.task.get_evaluator(name='f1')
         metric = evaluator(y_trues,y_predicts.argmax(dim=1).to('cpu'))
         return metric, loss
-            
