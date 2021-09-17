@@ -8,7 +8,7 @@
 - Clone the Openhgnn-DGL
 
   ```bash
-  python main.py -m KGCN -d lastfmKGCN -t recommendation -g 0 --use_best_config
+  python main.py -m KGCN -d LastFM4KGCN -t recommendation -g 0 --use_best_config
   ```
 
   If you do not have gpu, set -gpu -1.
@@ -22,9 +22,9 @@
 
 | Recommendation |               AUC               |               F1                |
 | :------------: | :-----------------------------: | :-----------------------------: |
-|    KGCN-sum    | paper: 79.4%    OpenHGNN: 76.8% | paper: 71.9%    OpenHGNN: 69.7% |
-|  KGCN-concat   | paper: 79.6%    OpenHGNN: 77.8% | paper: 72.1%    OpenHGNN: 70.3% |
-| KGCN-neighbor  | paper: 78.1%    OpenHGNN: 77.9% | paper: 69.9%    OpenHGNN: 69.3% |
+|    KGCN-sum    | paper: 79.4%    OpenHGNN: 79.6% | paper: 71.9%    OpenHGNN: 71.8% |
+|  KGCN-concat   | paper: 79.6%    OpenHGNN: 78.9% | paper: 72.1%    OpenHGNN: 71.4% |
+| KGCN-neighbor  | paper: 78.1%    OpenHGNN: 78.6% | paper: 69.9%    OpenHGNN: 71.0% |
 
 ## Dataset
 
